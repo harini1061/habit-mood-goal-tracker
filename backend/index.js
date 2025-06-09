@@ -11,6 +11,13 @@ app.use(express.json());
 
 const habitRoutes = require('./routes/habitRoutes');
 app.use('/api/habits', habitRoutes);
+
+const moodRoutes = require('./routes/moodRoutes');
+app.use('/api/moods', moodRoutes);
+
+const goalRoutes = require('./routes/goalRoutes');
+app.use('/api/goals', goalRoutes);
+
 // Debug log to check MONGO_URI
 console.log("🌐 MONGO_URI is:", process.env.MONGO_URI);
 
