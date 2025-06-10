@@ -1,22 +1,69 @@
 const Habit = require('../models/Habit');
 
-// Add a new habit
-exports.createHabit = async (req, res) => {
+// Create a new habit
+const createHabit = async (req, res) => {
   try {
-    const habit = new Habit(req.body);
-    await habit.save();
-    res.status(201).json(habit);
-  } catch (err) {
-    res.status(400).json({ error: err.message });
+    const { userId, name, frequency } = req.body;
+
+    const newHabit = new Habit({ userId, name, frequency });
+    await newHabit.save();
+
+    res.status(201).json(newHabit);
+  } catch (error) {
+    res.status(500).json({ message: 'Failed to create habit', error });
   }
 };
 
-// Get all habits
-exports.getHabits = async (req, res) => {
+// Get all habits for a user
+const getHabits = async (req, res) => {
   try {
-    const habits = await Habit.find();
+    const { userId } = req.params;
+
+    const habits = await Habit.find({ userId });
     res.status(200).json(habits);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
+  } catch (error) {
+    res.status(500).json({ message: 'Failed to fetch habits', error });
   }
+};
+
+// Update a habit
+const updateHabit = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const updatedData = req.body;
+
+    const updatedHabit = await Habit.findByIdAndUpdate(id, updatedData, { new: true });
+
+    if (!updatedHabit) {
+      return res.status(404).json({ message: 'Habit not found' });
+    }
+
+    res.status(200).json(updatedHabit);
+  } catch (error) {
+    res.status(500).json({ message: 'Failed to update habit', error });
+  }
+};
+
+// Delete a habit
+const deleteHabit = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const deletedHabit = await Habit.findByIdAndDelete(id);
+
+    if (!deletedHabit) {
+      return res.status(404).json({ message: 'Habit not found' });
+    }
+
+    res.status(200).json({ message: 'Habit deleted successfully' });
+  } catch (error) {
+    res.status(500).json({ message: 'Failed to delete habit', error });
+  }
+};
+
+module.exports = {
+  createHabit,
+  getHabits,
+  updateHabit,
+  deleteHabit,
 };
