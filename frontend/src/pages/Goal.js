@@ -42,6 +42,24 @@ function Goal() {
     }
   };
 
+  const markGoalCompleted = async (id) => {
+    try {
+      await axios.put(`http://localhost:5000/api/goals/${id}`, { completed: true });
+      fetchGoals(); // Refresh the goals after update
+    } catch (err) {
+      console.error('Error updating goal:', err);
+    }
+  };
+
+  const deleteGoal = async (id) => {
+    try {
+      await axios.delete(`http://localhost:5000/api/goals/${id}`);
+      fetchGoals(); // Refresh the goals after delete
+    } catch (err) {
+      console.error('Error deleting goal:', err);
+    }
+  };
+
   return (
     <div>
       <h1>Goal Tracker</h1>
@@ -76,6 +94,10 @@ function Goal() {
             <p><strong>Description:</strong> {goal.description}</p>
             <p><strong>Target Date:</strong> {goal.targetDate ? new Date(goal.targetDate).toLocaleDateString() : 'N/A'}</p>
             <p><strong>Status:</strong> {goal.completed ? '✅ Completed' : '❌ Not Completed'}</p>
+            {!goal.completed && (
+              <button onClick={() => markGoalCompleted(goal._id)}>✅ Mark Completed</button>
+            )}
+            <button onClick={() => deleteGoal(goal._id)}>🗑️ Delete</button>
           </div>
         ))
       )}
