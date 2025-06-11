@@ -1,19 +1,20 @@
-import { useEffect, useState } from 'react';
+// src/App.js
+import React from 'react';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import Mood from './pages/Mood';
+import Habit from './pages/Habit';
+import Goal from './pages/Goal';
 
 function App() {
-  const [msg, setMsg] = useState('');
-
-  useEffect(() => {
-    fetch('/api/test')
-      .then(res => res.json())
-      .then(data => setMsg(data.message));
-  }, []);
-
   return (
-    <div>
-      <h1>Frontend</h1>
-      <p>{msg}</p>
-    </div>
+    <Router>
+      <Routes>
+        <Route path="/" element={<h1>Welcome to the Habit, Mood & Goal Tracker</h1>} />
+        <Route path="/mood" element={<Mood />} />
+        <Route path="/habit" element={<Habit />} />
+        <Route path="/goal" element={<Goal />} />
+      </Routes>
+    </Router>
   );
 }
 
