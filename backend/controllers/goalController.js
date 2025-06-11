@@ -22,8 +22,11 @@ exports.getGoals = async (req, res) => {
 
 exports.updateGoal = async (req, res) => {
   try {
-    const { id } = req.params;
-    const updatedGoal = await Goal.findByIdAndUpdate(id, req.body, { new: true });
+    const updatedGoal = await Goal.findByIdAndUpdate(
+      req.params.id,
+      req.body,
+      { new: true }
+    );
     res.status(200).json(updatedGoal);
   } catch (err) {
     res.status(400).json({ error: err.message });
@@ -32,9 +35,8 @@ exports.updateGoal = async (req, res) => {
 
 exports.deleteGoal = async (req, res) => {
   try {
-    const { id } = req.params;
-    await Goal.findByIdAndDelete(id);
-    res.status(204).send();
+    await Goal.findByIdAndDelete(req.params.id);
+    res.status(204).send(); // No content
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
