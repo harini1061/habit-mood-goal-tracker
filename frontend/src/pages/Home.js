@@ -27,13 +27,45 @@ function Home() {
       }
     };
     fetchData();
-  }, []);
+  }, [userId]);
 
   const latestMood = moods.length > 0 ? moods[moods.length - 1] : null;
 
   return (
     <div style={{ padding: "2rem" }}>
-      <h1>Welcome to the Habit, Mood & Goal Tracker</h1>
+      <style>{`
+        @keyframes fadeIn {
+          from { opacity: 0; transform: translateY(20px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        
+        @keyframes fadeInUp {
+          from { opacity: 0; transform: translateY(30px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        
+        @keyframes fadeInScale {
+          from { opacity: 0; transform: scale(0.9) translateY(20px); }
+          to { opacity: 1; transform: scale(1) translateY(0); }
+        }
+        
+        @keyframes shimmer {
+          0% { transform: translateX(-100%); }
+          100% { transform: translateX(100%); }
+        }
+        
+        @keyframes glow {
+          from { text-shadow: 0 4px 20px rgba(255, 255, 255, 0.3); }
+          to { text-shadow: 0 4px 30px rgba(255, 255, 255, 0.6), 0 0 40px rgba(255, 255, 255, 0.3); }
+        }
+        
+        @keyframes pulse {
+          0%, 100% { transform: scale(1); }
+          50% { transform: scale(1.02); }
+        }
+      `}</style>
+
+      <h1>THE WAY OF ALETHEA</h1>
       
       <p style={{
         fontSize: '1.2rem',
@@ -338,38 +370,6 @@ function Home() {
         <button onClick={() => navigate('/habits')} style={{ margin: '0 1rem' }}>Go to Habits</button>
         <button onClick={() => navigate('/moods')}>Go to Moods</button>
       </div>
-
-      <style jsx>{`
-        @keyframes fadeIn {
-          from { opacity: 0; transform: translateY(20px); }
-          to { opacity: 1; transform: translateY(0); }
-        }
-        
-        @keyframes fadeInUp {
-          from { opacity: 0; transform: translateY(30px); }
-          to { opacity: 1; transform: translateY(0); }
-        }
-        
-        @keyframes fadeInScale {
-          from { opacity: 0; transform: scale(0.9) translateY(20px); }
-          to { opacity: 1; transform: scale(1) translateY(0); }
-        }
-        
-        @keyframes shimmer {
-          0% { transform: translateX(-100%); }
-          100% { transform: translateX(100%); }
-        }
-        
-        @keyframes glow {
-          from { text-shadow: 0 4px 20px rgba(255, 255, 255, 0.3); }
-          to { text-shadow: 0 4px 30px rgba(255, 255, 255, 0.6), 0 0 40px rgba(255, 255, 255, 0.3); }
-        }
-        
-        @keyframes pulse {
-          0%, 100% { transform: scale(1); }
-          50% { transform: scale(1.02); }
-        }
-      `}</style>
     </div>
   );
 }
