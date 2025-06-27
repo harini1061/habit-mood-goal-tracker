@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import '../unified-styles.css';
 
 function Goal() {
   const [goals, setGoals] = useState([]);

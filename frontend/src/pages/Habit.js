@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+// External CSS for styling
+import '../unified-styles.css';
 
 function Habit() {
   const [habits, setHabits] = useState([]);
@@ -7,8 +9,9 @@ function Habit() {
   const [frequency, setFrequency] = useState('daily');
   const [editId, setEditId] = useState(null);
 
-  const userId = '6847dd137ab96450bdb4f01c'; // ✅ Replace with your actual userId
+  const userId = '6847dd137ab96450bdb4f01c'; // ✅ Replace with dynamic user ID if needed
 
+  // Fetch habits on load
   useEffect(() => {
     fetchHabits();
   }, []);
@@ -22,14 +25,13 @@ function Habit() {
     }
   };
 
-  // Add or update habit
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!name) return;
+    if (!name.trim()) return;
 
     try {
       if (editId) {
-        // Edit mode
+        // Edit habit
         await axios.put(`http://localhost:5000/api/habits/${editId}`, {
           name,
           frequency,
@@ -68,17 +70,24 @@ function Habit() {
     }
   };
 
+  const handleCancel = () => {
+    setName('');
+    setFrequency('daily');
+    setEditId(null);
+  };
+
   return (
-    <div>
+    <div className="habit-container">
       <h1>Habit Tracker</h1>
 
-      <form onSubmit={handleSubmit}>
+      <form className="habit-form" onSubmit={handleSubmit}>
         <input
           type="text"
           value={name}
           onChange={(e) => setName(e.target.value)}
           placeholder="Enter habit name"
         />
+
         <select
           value={frequency}
           onChange={(e) => setFrequency(e.target.value)}
@@ -86,31 +95,35 @@ function Habit() {
           <option value="daily">Daily</option>
           <option value="weekly">Weekly</option>
         </select>
-        <button type="submit">{editId ? 'Update Habit' : 'Add Habit'}</button>
+
+        <button type="submit">
+          {editId ? 'Update Habit' : 'Add Habit'}
+        </button>
+
         {editId && (
-          <button type="button" onClick={() => {
-            setName('');
-            setFrequency('daily');
-            setEditId(null);
-          }}>
+          <button type="button" className="cancel-btn" onClick={handleCancel}>
             Cancel
           </button>
         )}
       </form>
 
-      {habits.length === 0 ? (
-        <p>No habits found.</p>
-      ) : (
-        habits.map((habit) => (
-          <div key={habit._id} style={{ border: '1px solid #ccc', margin: '10px', padding: '10px' }}>
-            <p><strong>Habit:</strong> {habit.name}</p>
-            <p><strong>Frequency:</strong> {habit.frequency}</p>
-            <p><strong>Created:</strong> {new Date(habit.createdAt).toLocaleDateString()}</p>
-            <button onClick={() => handleEdit(habit)}>📝 Edit</button>
-            <button onClick={() => handleDelete(habit._id)}>🗑️ Delete</button>
-          </div>
-        ))
-      )}
+      <div className="habit-list">
+        {habits.length === 0 ? (
+          <p>No habits found.</p>
+        ) : (
+          habits.map((habit) => (
+            <div key={habit._id} className="habit-item">
+              <p><strong>Habit:</strong> {habit.name}</p>
+              <p><strong>Frequency:</strong> {habit.frequency}</p>
+              <p><strong>Created:</strong> {new Date(habit.createdAt).toLocaleDateString()}</p>
+              <div className="habit-actions">
+                <button onClick={() => handleEdit(habit)}>📝 Edit</button>
+                <button onClick={() => handleDelete(habit._id)}>🗑️ Delete</button>
+              </div>
+            </div>
+          ))
+        )}
+      </div>
     </div>
   );
 }
