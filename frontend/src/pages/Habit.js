@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-// External CSS for styling
 import '../unified-styles.css';
+import Navbar from './Navbar';
 
 function Habit() {
   const [habits, setHabits] = useState([]);
@@ -11,7 +11,6 @@ function Habit() {
 
   const userId = '6847dd137ab96450bdb4f01c'; // ✅ Replace with dynamic user ID if needed
 
-  // Fetch habits on load
   useEffect(() => {
     fetchHabits();
   }, []);
@@ -31,13 +30,11 @@ function Habit() {
 
     try {
       if (editId) {
-        // Edit habit
         await axios.put(`http://localhost:5000/api/habits/${editId}`, {
           name,
           frequency,
         });
       } else {
-        // Add new habit
         await axios.post('http://localhost:5000/api/habits', {
           name,
           frequency,
@@ -45,7 +42,6 @@ function Habit() {
         });
       }
 
-      // Reset form
       setName('');
       setFrequency('daily');
       setEditId(null);
@@ -76,9 +72,25 @@ function Habit() {
     setEditId(null);
   };
 
+  const markCompleted = async (habitId) => {
+    try {
+      const res = await axios.post(`http://localhost:5000/api/habits/${habitId}/complete`);
+      alert(`✅ Habit marked as completed!\n🔥 Current streak: ${res.data.streak}`);
+      fetchHabits();
+    } catch (error) {
+      if (error.response?.status === 400) {
+        alert('⚠️ You’ve already marked this habit today!');
+      } else {
+        console.error('Error marking habit complete:', error);
+        alert('❌ Something went wrong.');
+      }
+    }
+  };
+
   return (
     <div className="habit-container">
-      <h1>Habit Tracker</h1>
+      
+      <h1>🧠 Habit Tracker</h1>
 
       <form className="habit-form" onSubmit={handleSubmit}>
         <input
@@ -86,6 +98,7 @@ function Habit() {
           value={name}
           onChange={(e) => setName(e.target.value)}
           placeholder="Enter habit name"
+          required
         />
 
         <select
@@ -111,17 +124,24 @@ function Habit() {
         {habits.length === 0 ? (
           <p>No habits found.</p>
         ) : (
-          habits.map((habit) => (
-            <div key={habit._id} className="habit-item">
-              <p><strong>Habit:</strong> {habit.name}</p>
-              <p><strong>Frequency:</strong> {habit.frequency}</p>
-              <p><strong>Created:</strong> {new Date(habit.createdAt).toLocaleDateString()}</p>
-              <div className="habit-actions">
-                <button onClick={() => handleEdit(habit)}>📝 Edit</button>
-                <button onClick={() => handleDelete(habit._id)}>🗑️ Delete</button>
+          habits.map((habit) => {
+            const last = habit.lastCompleted ? new Date(habit.lastCompleted).toLocaleDateString() : 'Never';
+            return (
+              <div key={habit._id} className="habit-item">
+                <p><strong>Habit:</strong> {habit.name}</p>
+                <p><strong>Frequency:</strong> {habit.frequency}</p>
+                <p><strong>Created:</strong> {new Date(habit.createdAt).toLocaleDateString()}</p>
+                <p><strong>🔥 Streak:</strong> {habit.streak || 0} days</p>
+                <p><strong>Last Completed:</strong> {last}</p>
+
+                <div className="habit-actions">
+                  <button onClick={() => handleEdit(habit)}>📝 Edit</button>
+                  <button onClick={() => handleDelete(habit._id)}>🗑️ Delete</button>
+                  <button onClick={() => markCompleted(habit._id)}>✅ Mark Today</button>
+                </div>
               </div>
-            </div>
-          ))
+            );
+          })
         )}
       </div>
     </div>

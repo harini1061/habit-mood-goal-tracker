@@ -1,4 +1,5 @@
-require('dotenv').config(); // Load environment variables from .env
+// Load environment variables from .env
+require('dotenv').config();
 
 const express = require('express');
 const mongoose = require('mongoose');
@@ -18,13 +19,16 @@ console.log("🌐 MONGO_URI is:", process.env.MONGO_URI);
 const habitRoutes = require('./routes/habitRoutes');
 const moodRoutes = require('./routes/moodRoutes');
 const goalRoutes = require('./routes/goalRoutes');
-const authRoutes = require('./routes/authRoutes'); // ✅ NEW
+const authRoutes = require('./routes/authRoutes');
+const partnerRoutes = require('./routes/partnerRoutes');
+ // ✅ Moved after `app` is declared
 
 // 🛣️ Use Routes
 app.use('/api/habits', habitRoutes);
 app.use('/api/moods', moodRoutes);
 app.use('/api/goals', goalRoutes);
-app.use('/api/auth', authRoutes); // ✅ NEW
+app.use('/api/auth', authRoutes);
+app.use('/api/partners', partnerRoutes); // ✅ Now safe to use
 
 // ✅ MongoDB Connection
 mongoose.connect(process.env.MONGO_URI, {

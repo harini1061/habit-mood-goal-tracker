@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import '../unified-styles.css';
+//import Navbar from './Navbar';
 
 function Home() {
   const [habits, setHabits] = useState([]);

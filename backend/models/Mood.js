@@ -1,9 +1,14 @@
 const mongoose = require('mongoose');
 
 const moodSchema = new mongoose.Schema({
-  emotion: { type: String, required: true }, // e.g., happy, sad, stressed
-  intensity: { type: Number, min: 1, max: 10 }, // scale of 1–10
-  note: { type: String }, // optional note
+  user: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: true
+  },
+  emotion: { type: String, required: true },  // e.g., happy, sad
+  intensity: { type: Number, min: 1, max: 10 },  // scale of 1–10
+  note: { type: String },  // optional
   date: { type: Date, default: Date.now }
 });
 

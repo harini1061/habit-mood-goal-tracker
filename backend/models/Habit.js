@@ -20,6 +20,13 @@ const HabitSchema = new mongoose.Schema({
       type: Date,
     },
   ],
+  streak: {
+    type: Number,
+    default: 0,
+  },
+  lastCompleted: {
+    type: Date,
+  },
   createdAt: {
     type: Date,
     default: Date.now,
