@@ -1,9 +1,21 @@
 const Mood = require('../models/Mood');
 
-// Create a new mood
+// ✅ Create a new mood
 exports.createMood = async (req, res) => {
   try {
-    const mood = new Mood(req.body);
+    const { emotion, note, intensity, user } = req.body;  // destructure for clarity
+
+    if (!emotion || !user) {
+      return res.status(400).json({ error: "Emotion and user are required" });
+    }
+
+    const mood = new Mood({
+      emotion,
+      note,
+      intensity,
+      user
+    });
+
     await mood.save();
     res.status(201).json(mood);
   } catch (err) {
@@ -11,10 +23,10 @@ exports.createMood = async (req, res) => {
   }
 };
 
-// Get all moods
+// ✅ Get all moods
 exports.getMoods = async (req, res) => {
   try {
-    const moods = await Mood.find();
+    const moods = await Mood.find().populate("user", "username email"); 
     res.json(moods);
   } catch (err) {
     res.status(500).json({ error: err.message });

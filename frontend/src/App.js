@@ -6,14 +6,15 @@ import Mood from './pages/Mood';
 import Goal from './pages/Goal';
 import Login from './pages/Login';
 import Signup from './pages/Signup';
-import Welcome from './pages/Welcome';
+import Welcome from './pages/Welcome'; 
 import Layout from './components/Layout'; // 💡 New import
 
 function App() {
   return (
     <Router>
       <Routes>
-        <Route path="/" element={<Welcome />} />
+         <Route path="/" element={<Welcome />} />
+       
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Signup />} />
 
