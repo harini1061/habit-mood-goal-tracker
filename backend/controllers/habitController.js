@@ -3,7 +3,8 @@ const Habit = require('../models/Habit');
 // Create a new habit
 const createHabit = async (req, res) => {
   try {
-    const { userId, name, frequency } = req.body;
+    const {name, frequency } = req.body;
+    const userId = req.user.id; // <-- get from JWT
 
     const newHabit = new Habit({ userId, name, frequency });
     await newHabit.save();
@@ -17,8 +18,7 @@ const createHabit = async (req, res) => {
 // Get all habits for a user
 const getHabits = async (req, res) => {
   try {
-    const { userId } = req.params;
-
+    const userId = req.user.id; // <-- get from JWT
     const habits = await Habit.find({ userId });
     res.status(200).json(habits);
   } catch (error) {

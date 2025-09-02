@@ -13,54 +13,74 @@ function Habit() {
   }, []);
 
   const fetchHabits = async () => {
-    try {
-      const res = await axios.get('http://localhost:5000/habits');
-      setHabits(res.data);
-    } catch (err) {
-      console.error('Error fetching habits:', err);
-      // For development, you can add some mock data to test the UI
-      // setHabits([
-      //   { _id: '1', name: 'Drink Water', frequency: 'daily' },
-      //   { _id: '2', name: 'Exercise', frequency: 'weekly' }
-      // ]);
-    }
-  };
+  try {
+    // Get the token from localStorage/sessionStorage
+    const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+    const res = await axios.get("http://localhost:5000/api/habits", {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    setHabits(res.data);
+  } catch (error) {
+    console.error("Error fetching habits:", error);
+  }
+};
+
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (!name) return;
-
-    try {
-      if (editId) {
-        await axios.put(`http://localhost:5000/habits/${editId}`, { name, frequency });
-        setEditId(null);
-      } else {
-        await axios.post('http://localhost:5000/habits', { name, frequency });
-      }
-      setName('');
-      setFrequency('daily');
-      fetchHabits();
-    } catch (err) {
-      console.error('Error saving habit:', err);
-      alert('Error: Could not save habit. Make sure your backend server is running on localhost:5000');
-    }
-  };
+  e.preventDefault();
+  try {
+    const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+    await axios.post(
+      "http://localhost:5000/api/habits",
+      { name, frequency },
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+    setName("");
+    setFrequency("daily");
+    fetchHabits();
+  } catch (error) {
+    console.error("Error adding habit:", error);
+  }
+};
 
   const handleEdit = (habit) => {
     setName(habit.name);
     setFrequency(habit.frequency);
     setEditId(habit._id);
   };
+  
+  const handleUpdate = async () => {
+  try {
+    const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+
+    await axios.put(
+      `http://localhost:5000/api/habits/${editId}`,
+      { name, frequency },
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+
+    setName("");
+    setFrequency("");
+    setEditId(null);
+
+    fetchHabits();
+  } catch (error) {
+    console.error("Error updating habit:", error);
+   }
+  };
 
   const handleDelete = async (id) => {
-    try {
-      await axios.delete(`http://localhost:5000/habits/${id}`);
-      fetchHabits();
-    } catch (err) {
-      console.error('Error deleting habit:', err);
-      alert('Error: Could not delete habit. Make sure your backend server is running on localhost:5000');
-    }
-  };
+  try {
+    const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+    await axios.delete(`http://localhost:5000/api/habits/${id}`, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    fetchHabits();
+  } catch (error) {
+    console.error("Error deleting habit:", error);
+  }
+};
+
 
   return (
     <div style={{ 
@@ -309,7 +329,7 @@ function Habit() {
           ✨ {editId ? 'Update Habit' : 'Create New Habit'}
         </h3>
 
-        <form onSubmit={handleSubmit} style={{
+        <form onSubmit={editId ? handleUpdate : handleSubmit} style={{
           display: 'grid',
           gap: '1.5rem'
         }}>
