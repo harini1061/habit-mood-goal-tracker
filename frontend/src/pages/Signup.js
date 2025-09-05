@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import axios from 'axios';
 import '../unified-styles.css';
-import { Eye, EyeOff, User, Mail, Lock, CheckCircle, AlertCircle } from 'lucide-react';
+import { Eye, EyeOff, User, Mail, Lock, CheckCircle, AlertCircle, ArrowLeft } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 const Signup = () => {
@@ -78,6 +78,10 @@ const Signup = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleBackToWelcome = () => {
+    navigate('/');
   };
 
   const getPasswordStrength = (password) => {
@@ -200,6 +204,48 @@ const Signup = () => {
         .sparkle-2 { top: 60%; right: 35%; animation-delay: 1s; }
         .sparkle-3 { bottom: 40%; left: 70%; animation-delay: 2s; }
       `}</style>
+
+      {/* Back Button */}
+      <button 
+        onClick={handleBackToWelcome}
+        style={{
+          position: 'absolute',
+          top: '2rem',
+          left: '2rem',
+          width: '60px',
+          height: '60px',
+          background: 'linear-gradient(145deg, rgba(255, 255, 255, 0.15), rgba(255, 255, 255, 0.05))',
+          backdropFilter: 'blur(20px)',
+          WebkitBackdropFilter: 'blur(20px)',
+          border: '2px solid rgba(255, 255, 255, 0.3)',
+          borderRadius: '50%',
+          color: '#ffffff',
+          cursor: 'pointer',
+          transition: 'all 0.3s ease',
+          boxShadow: '0 10px 30px rgba(0, 0, 0, 0.3)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 10,
+          textShadow: '0 2px 10px rgba(0, 0, 0, 0.5)',
+          animation: 'fadeInUp 1s ease-out'
+        }}
+        onMouseEnter={(e) => {
+          e.target.style.transform = 'translateY(-3px) scale(1.1)';
+          e.target.style.boxShadow = '0 15px 40px rgba(102, 126, 234, 0.4)';
+          e.target.style.background = 'linear-gradient(145deg, rgba(102, 126, 234, 0.3), rgba(118, 75, 162, 0.2))';
+          e.target.style.borderColor = 'rgba(102, 126, 234, 0.6)';
+        }}
+        onMouseLeave={(e) => {
+          e.target.style.transform = 'translateY(0) scale(1)';
+          e.target.style.boxShadow = '0 10px 30px rgba(0, 0, 0, 0.3)';
+          e.target.style.background = 'linear-gradient(145deg, rgba(255, 255, 255, 0.15), rgba(255, 255, 255, 0.05))';
+          e.target.style.borderColor = 'rgba(255, 255, 255, 0.3)';
+        }}
+        title="Back to Welcome"
+      >
+        <ArrowLeft size={24} />
+      </button>
 
       {/* Floating decorative orbs */}
       <div className="floating-orb orb-1"></div>
@@ -703,7 +749,7 @@ const Signup = () => {
               }
             }}
           >
-            {loading ? '🔄 Creating Account...' : '🚀 Create Account'}
+            {loading ? 'Creating Account...' : 'Create Account'}
           </button>
         </form>
 

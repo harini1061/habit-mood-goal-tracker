@@ -1,10 +1,11 @@
 const express = require('express');
 const router = express.Router();
+const auth = require('../middleware/auth');
 const moodController = require('../controllers/moodController');
 
-router.post('/', moodController.createMood);
-router.get('/', moodController.getMoods);
-router.put('/:id', moodController.updateMood);
-router.delete('/:id', moodController.deleteMood);
+router.post('/', auth, moodController.createMood);
+router.get('/', auth, moodController.getMoods);
+router.put('/:id', auth, moodController.updateMood);
+router.delete('/:id', auth, moodController.deleteMood);
 
 module.exports = router;

@@ -1,5 +1,5 @@
 const PartnerRequest = require('../models/PartnerRequest');
-const User = require('../models/user');
+const User = require('../models/User');
 
 // 📩 Send partner request
 exports.sendPartnerRequest = async (req, res) => {

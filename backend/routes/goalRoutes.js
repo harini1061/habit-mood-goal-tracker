@@ -1,5 +1,6 @@
 const express = require('express');
 const router = express.Router();
+const auth = require('../middleware/auth'); // Add auth middleware
 const {
   createGoal,
   getGoals,
@@ -7,16 +8,16 @@ const {
   deleteGoal,
 } = require('../controllers/goalController');
 
-// Create goal
-router.post('/', createGoal);
+// Create goal (with auth)
+router.post('/', auth, createGoal);
 
-// Get goals for a specific user
-router.get('/:userId', getGoals);
+// Get goals for authenticated user (no userId param needed)
+router.get('/', auth, getGoals);
 
-// Update goal
-router.put('/:id', updateGoal);
+// Update goal (with auth)
+router.put('/:id', auth, updateGoal);
 
-// Delete goal
-router.delete('/:id', deleteGoal);
+// Delete goal (with auth)
+router.delete('/:id', auth, deleteGoal);
 
 module.exports = router;

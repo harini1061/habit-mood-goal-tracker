@@ -2,35 +2,44 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import '../unified-styles.css';
-//import Navbar from './Navbar';
 
 function Home() {
   const [habits, setHabits] = useState([]);
   const [goals, setGoals] = useState([]);
   const [moods, setMoods] = useState([]);
+  const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
-
-  const userId = '6847dd137ab96450bdb4f01c'; // Replace with actual userId
 
   useEffect(() => {
     const fetchData = async () => {
       try {
+        const token = localStorage.getItem("token") || sessionStorage.getItem("token");
+        
         const [habitsRes, goalsRes, moodsRes] = await Promise.all([
-          axios.get(`http://localhost:5000/api/habits/${userId}`),
-          axios.get(`http://localhost:5000/api/goals/${userId}`),
-          axios.get('http://localhost:5000/api/moods'),
+          axios.get('http://localhost:5000/api/habits', {
+            headers: { Authorization: `Bearer ${token}` }
+          }),
+          axios.get('http://localhost:5000/api/goals', {
+            headers: { Authorization: `Bearer ${token}` }
+          }),
+          axios.get('http://localhost:5000/api/moods', {
+            headers: { Authorization: `Bearer ${token}` }
+          }),
         ]);
+        
         setHabits(habitsRes.data);
         setGoals(goalsRes.data);
         setMoods(moodsRes.data);
+        setLoading(false);
       } catch (err) {
         console.error("Error loading data:", err);
+        setLoading(false);
       }
     };
     fetchData();
-  }, [userId]);
+  }, []);
 
-  const latestMood = moods.length > 0 ? moods[moods.length - 1] : null;
+  const latestMood = moods.length > 0 ? moods[0] : null; // Assuming sorted by date desc
 
   return (
     <div style={{ 
@@ -87,6 +96,23 @@ function Home() {
           100% { background-position: 0% 50%; }
         }
 
+        @keyframes bounceIn {
+          0% { transform: scale(0.3) translateY(-50px); opacity: 0; }
+          50% { transform: scale(1.05) translateY(-10px); }
+          70% { transform: scale(0.9) translateY(0); }
+          100% { transform: scale(1) translateY(0); opacity: 1; }
+        }
+
+        @keyframes slideInLeft {
+          from { transform: translateX(-100px); opacity: 0; }
+          to { transform: translateX(0); opacity: 1; }
+        }
+
+        @keyframes slideInRight {
+          from { transform: translateX(100px); opacity: 0; }
+          to { transform: translateX(0); opacity: 1; }
+        }
+
         .elegant-button {
           background: linear-gradient(145deg, rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0.05));
           border: 2px solid rgba(255, 255, 255, 0.3);
@@ -101,8 +127,9 @@ function Home() {
           -webkit-backdrop-filter: blur(20px);
           text-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
           box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-          position: relative;
-          overflow: hidden;
+          position: 'relative';
+          overflow: 'hidden';
+          white-space: nowrap;
         }
 
         .elegant-button:hover {
@@ -150,12 +177,91 @@ function Home() {
           left: 10%;
           animation-delay: -1s;
         }
+
+        .nav-container {
+          display: flex;
+          gap: 1rem;
+          justify-content: center;
+          flex-wrap: wrap;
+          margin-bottom: 2rem;
+          padding: 1.5rem;
+          background: linear-gradient(145deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.02));
+          backdrop-filter: blur(30px);
+          border: 1px solid rgba(255, 255, 255, 0.2);
+          border-radius: 25px;
+          box-shadow: 0 15px 40px rgba(0, 0, 0, 0.3);
+          animation: slideInLeft 0.8s ease-out;
+        }
+
+        .stat-card {
+          font-size: 1.5rem;
+          font-weight: 700;
+          color: rgba(255, 255, 255, 0.98);
+          padding: 2rem;
+          backdrop-filter: blur(20px);
+          -webkit-backdrop-filter: blur(20px);
+          border-radius: 20px;
+          box-shadow: 0 15px 45px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+          text-shadow: 0 2px 15px rgba(0, 0, 0, 0.5);
+          position: relative;
+          overflow: hidden;
+          transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+          cursor: pointer;
+          transform: translateZ(0);
+        }
+
+        .stat-card:hover {
+          transform: translateY(-8px) scale(1.02);
+          box-shadow: 0 25px 60px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.3);
+        }
+
+        .stat-card::before {
+          content: '';
+          position: absolute;
+          top: 0;
+          left: -100%;
+          width: 100%;
+          height: 100%;
+          background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.15), transparent);
+          transition: left 0.6s;
+        }
+
+        .stat-card:hover::before {
+          left: 100%;
+        }
+
+        .loading-spinner {
+          display: inline-block;
+          width: 40px;
+          height: 40px;
+          border: 3px solid rgba(255, 255, 255, 0.3);
+          border-radius: 50%;
+          border-top-color: #fff;
+          animation: spin 1s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+          to { transform: rotate(360deg); }
+        }
       `}</style>
 
       {/* Floating decorative orbs */}
       <div className="floating-orb orb-1"></div>
       <div className="floating-orb orb-2"></div>
       <div className="floating-orb orb-3"></div>
+
+      {/* Navigation Buttons at Top */}
+      <div className="nav-container">
+        <button className="elegant-button" onClick={() => navigate('/goals')}>
+          🎯 Goals
+        </button>
+        <button className="elegant-button" onClick={() => navigate('/habits')}>
+          ✅ Habits
+        </button>
+        <button className="elegant-button" onClick={() => navigate('/moods')}>
+          😊 Moods
+        </button>
+      </div>
 
       <h1 style={{
         fontSize: '3.5rem',
@@ -202,7 +308,12 @@ function Home() {
           transform: 'translateX(-100%)',
           animation: 'shimmer 3s infinite'
         }}></span>
-        {new Date().toLocaleDateString()}
+        {new Date().toLocaleDateString('en-US', { 
+          weekday: 'long', 
+          year: 'numeric', 
+          month: 'long', 
+          day: 'numeric' 
+        })}
       </p>
 
       <blockquote style={{
@@ -297,207 +408,149 @@ function Home() {
           📊 Your Progress Summary
         </h3>
 
-        <div style={{
-          display: 'grid',
-          gap: '2rem',
-          marginBottom: '2.5rem'
-        }}>
-          <p style={{
-            fontSize: '1.5rem',
-            fontWeight: '700',
-            color: 'rgba(255, 255, 255, 0.98)',
-            padding: '2rem',
-            background: 'linear-gradient(145deg, rgba(102, 126, 234, 0.25), rgba(118, 75, 162, 0.15))',
-            backdropFilter: 'blur(20px)',
-            WebkitBackdropFilter: 'blur(20px)',
-            border: '2px solid rgba(102, 126, 234, 0.4)',
-            borderRadius: '20px',
-            boxShadow: '0 15px 45px rgba(102, 126, 234, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.2)',
-            textShadow: '0 2px 15px rgba(0, 0, 0, 0.5)',
-            position: 'relative',
-            overflow: 'hidden',
-            transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
-            cursor: 'pointer',
-            transform: 'translateZ(0)'
-          }}
-          onMouseEnter={(e) => {
-            e.target.style.transform = 'translateY(-8px) scale(1.02)';
-            e.target.style.boxShadow = '0 25px 60px rgba(102, 126, 234, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.3)';
-            e.target.style.borderColor = 'rgba(102, 126, 234, 0.6)';
-          }}
-          onMouseLeave={(e) => {
-            e.target.style.transform = 'translateY(0) scale(1)';
-            e.target.style.boxShadow = '0 15px 45px rgba(102, 126, 234, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.2)';
-            e.target.style.borderColor = 'rgba(102, 126, 234, 0.4)';
-          }}>
-            <span style={{
-              position: 'absolute',
-              top: '0',
-              left: '-100%',
-              width: '100%',
-              height: '100%',
-              background: 'linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.15), transparent)',
-              transition: 'left 0.6s'
-            }}></span>
-            🎯 Goals: <span style={{
-              color: '#87ceeb',
-              fontSize: '1.8rem',
-              fontWeight: '900',
-              textShadow: '0 0 20px rgba(135, 206, 235, 0.8)',
-              filter: 'drop-shadow(0 0 10px rgba(135, 206, 235, 0.6))'
-            }}>{goals.length}</span>
-          </p>
-
-          <p style={{
-            fontSize: '1.5rem',
-            fontWeight: '700',
-            color: 'rgba(255, 255, 255, 0.98)',
-            padding: '2rem',
-            background: 'linear-gradient(145deg, rgba(79, 172, 254, 0.25), rgba(0, 242, 254, 0.15))',
-            backdropFilter: 'blur(20px)',
-            WebkitBackdropFilter: 'blur(20px)',
-            border: '2px solid rgba(79, 172, 254, 0.4)',
-            borderRadius: '20px',
-            boxShadow: '0 15px 45px rgba(79, 172, 254, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.2)',
-            textShadow: '0 2px 15px rgba(0, 0, 0, 0.5)',
-            position: 'relative',
-            overflow: 'hidden',
-            transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
-            cursor: 'pointer',
-            transform: 'translateZ(0)'
-          }}
-          onMouseEnter={(e) => {
-            e.target.style.transform = 'translateY(-8px) scale(1.02)';
-            e.target.style.boxShadow = '0 25px 60px rgba(79, 172, 254, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.3)';
-            e.target.style.borderColor = 'rgba(79, 172, 254, 0.6)';
-          }}
-          onMouseLeave={(e) => {
-            e.target.style.transform = 'translateY(0) scale(1)';
-            e.target.style.boxShadow = '0 15px 45px rgba(79, 172, 254, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.2)';
-            e.target.style.borderColor = 'rgba(79, 172, 254, 0.4)';
-          }}>
-            <span style={{
-              position: 'absolute',
-              top: '0',
-              left: '-100%',
-              width: '100%',
-              height: '100%',
-              background: 'linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.15), transparent)',
-              transition: 'left 0.6s'
-            }}></span>
-            ✅ Habits: <span style={{
-              color: '#40e0d0',
-              fontSize: '1.8rem',
-              fontWeight: '900',
-              textShadow: '0 0 20px rgba(64, 224, 208, 0.8)',
-              filter: 'drop-shadow(0 0 10px rgba(64, 224, 208, 0.6))'
-            }}>{habits.length}</span>
-          </p>
-
-          <p style={{
-            fontSize: '1.5rem',
-            fontWeight: '700',
-            color: 'rgba(255, 255, 255, 0.98)',
-            padding: '2rem',
-            background: 'linear-gradient(145deg, rgba(250, 112, 154, 0.25), rgba(254, 225, 64, 0.15))',
-            backdropFilter: 'blur(20px)',
-            WebkitBackdropFilter: 'blur(20px)',
-            border: '2px solid rgba(250, 112, 154, 0.4)',
-            borderRadius: '20px',
-            boxShadow: '0 15px 45px rgba(250, 112, 154, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.2)',
-            textShadow: '0 2px 15px rgba(0, 0, 0, 0.5)',
-            position: 'relative',
-            overflow: 'hidden',
-            transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
-            cursor: 'pointer',
-            transform: 'translateZ(0)'
-          }}
-          onMouseEnter={(e) => {
-            e.target.style.transform = 'translateY(-8px) scale(1.02)';
-            e.target.style.boxShadow = '0 25px 60px rgba(250, 112, 154, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.3)';
-            e.target.style.borderColor = 'rgba(250, 112, 154, 0.6)';
-          }}
-          onMouseLeave={(e) => {
-            e.target.style.transform = 'translateY(0) scale(1)';
-            e.target.style.boxShadow = '0 15px 45px rgba(250, 112, 154, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.2)';
-            e.target.style.borderColor = 'rgba(250, 112, 154, 0.4)';
-          }}>
-            <span style={{
-              position: 'absolute',
-              top: '0',
-              left: '-100%',
-              width: '100%',
-              height: '100%',
-              background: 'linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.15), transparent)',
-              transition: 'left 0.6s'
-            }}></span>
-            😊 Moods Logged: <span style={{
-              color: '#ffd700',
-              fontSize: '1.8rem',
-              fontWeight: '900',
-              textShadow: '0 0 20px rgba(255, 215, 0, 0.8)',
-              filter: 'drop-shadow(0 0 10px rgba(255, 215, 0, 0.6))'
-            }}>{moods.length}</span>
-          </p>
-
-          {latestMood && (
-            <p style={{
-              fontSize: '1.4rem',
-              fontWeight: '600',
-              color: 'rgba(255, 255, 255, 0.98)',
-              padding: '2rem',
-              background: 'linear-gradient(145deg, rgba(255, 154, 158, 0.25), rgba(254, 207, 239, 0.15))',
-              backdropFilter: 'blur(20px)',
-              WebkitBackdropFilter: 'blur(20px)',
-              border: '2px solid rgba(255, 154, 158, 0.4)',
-              borderRadius: '20px',
-              boxShadow: '0 15px 45px rgba(255, 154, 158, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.2)',
-              textShadow: '0 2px 15px rgba(0, 0, 0, 0.5)',
-              position: 'relative',
-              overflow: 'hidden',
-              animation: 'pulse 3s infinite',
-              lineHeight: '1.5'
-            }}>
-              <span style={{
-                position: 'absolute',
-                top: '0',
-                left: '0',
-                right: '0',
-                bottom: '0',
-                background: 'linear-gradient(45deg, transparent 30%, rgba(255, 255, 255, 0.1) 50%, transparent 70%)',
-                transform: 'translateX(-100%)',
-                animation: 'shimmer 4s infinite'
-              }}></span>
-              📌 Last Mood: <span style={{
-                color: '#ff69b4',
-                fontWeight: '800',
-                textShadow: '0 0 20px rgba(255, 105, 180, 0.8)',
-                filter: 'drop-shadow(0 0 10px rgba(255, 105, 180, 0.6))'
-              }}>{latestMood.emotion}</span> - <em style={{
-                color: 'rgba(255, 255, 255, 0.95)',
-                fontStyle: 'italic'
-              }}>{latestMood.note}</em>
+        {loading ? (
+          <div style={{ textAlign: 'center', padding: '3rem' }}>
+            <div className="loading-spinner"></div>
+            <p style={{ color: 'rgba(255, 255, 255, 0.8)', marginTop: '1rem', fontSize: '1.2rem' }}>
+              Loading your progress...
             </p>
-          )}
-        </div>
+          </div>
+        ) : (
+          <div style={{
+            display: 'grid',
+            gap: '2rem',
+            marginBottom: '2.5rem'
+          }}>
+            <div className="stat-card" style={{
+              background: 'linear-gradient(145deg, rgba(102, 126, 234, 0.25), rgba(118, 75, 162, 0.15))',
+              border: '2px solid rgba(102, 126, 234, 0.4)',
+              animation: 'slideInLeft 0.8s ease-out 0.2s both'
+            }}>
+              🎯 Goals: <span style={{
+                color: '#87ceeb',
+                fontSize: '1.8rem',
+                fontWeight: '900',
+                textShadow: '0 0 20px rgba(135, 206, 235, 0.8)',
+                filter: 'drop-shadow(0 0 10px rgba(135, 206, 235, 0.6))'
+              }}>{goals.length}</span>
+            </div>
+
+            <div className="stat-card" style={{
+              background: 'linear-gradient(145deg, rgba(79, 172, 254, 0.25), rgba(0, 242, 254, 0.15))',
+              border: '2px solid rgba(79, 172, 254, 0.4)',
+              animation: 'slideInRight 0.8s ease-out 0.4s both'
+            }}>
+              ✅ Habits: <span style={{
+                color: '#40e0d0',
+                fontSize: '1.8rem',
+                fontWeight: '900',
+                textShadow: '0 0 20px rgba(64, 224, 208, 0.8)',
+                filter: 'drop-shadow(0 0 10px rgba(64, 224, 208, 0.6))'
+              }}>{habits.length}</span>
+            </div>
+
+            <div className="stat-card" style={{
+              background: 'linear-gradient(145deg, rgba(250, 112, 154, 0.25), rgba(254, 225, 64, 0.15))',
+              border: '2px solid rgba(250, 112, 154, 0.4)',
+              animation: 'slideInLeft 0.8s ease-out 0.6s both'
+            }}>
+              😊 Moods Logged: <span style={{
+                color: '#ffd700',
+                fontSize: '1.8rem',
+                fontWeight: '900',
+                textShadow: '0 0 20px rgba(255, 215, 0, 0.8)',
+                filter: 'drop-shadow(0 0 10px rgba(255, 215, 0, 0.6))'
+              }}>{moods.length}</span>
+            </div>
+
+            {latestMood && (
+              <div style={{
+                fontSize: '1.4rem',
+                fontWeight: '600',
+                color: 'rgba(255, 255, 255, 0.98)',
+                padding: '2rem',
+                background: 'linear-gradient(145deg, rgba(255, 154, 158, 0.25), rgba(254, 207, 239, 0.15))',
+                backdropFilter: 'blur(20px)',
+                WebkitBackdropFilter: 'blur(20px)',
+                border: '2px solid rgba(255, 154, 158, 0.4)',
+                borderRadius: '20px',
+                boxShadow: '0 15px 45px rgba(255, 154, 158, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.2)',
+                textShadow: '0 2px 15px rgba(0, 0, 0, 0.5)',
+                position: 'relative',
+                overflow: 'hidden',
+                animation: 'bounceIn 1s ease-out 0.8s both',
+                lineHeight: '1.5'
+              }}>
+                <span style={{
+                  position: 'absolute',
+                  top: '0',
+                  left: '0',
+                  right: '0',
+                  bottom: '0',
+                  background: 'linear-gradient(45deg, transparent 30%, rgba(255, 255, 255, 0.1) 50%, transparent 70%)',
+                  transform: 'translateX(-100%)',
+                  animation: 'shimmer 4s infinite'
+                }}></span>
+                <div style={{ position: 'relative', zIndex: 1 }}>
+                  <div style={{ marginBottom: '0.5rem' }}>
+                    📌 <strong>Latest Mood:</strong> <span style={{
+                      color: '#ff69b4',
+                      fontWeight: '800',
+                      textShadow: '0 0 20px rgba(255, 105, 180, 0.8)',
+                      filter: 'drop-shadow(0 0 10px rgba(255, 105, 180, 0.6))'
+                    }}>{latestMood.emotion}</span>
+                  </div>
+                  <div style={{ marginBottom: '0.5rem' }}>
+                    <strong>Intensity:</strong> <span style={{ color: '#ffd700' }}>{latestMood.intensity || 5}/10</span>
+                  </div>
+                  {latestMood.note && (
+                    <div style={{ fontStyle: 'italic', color: 'rgba(255, 255, 255, 0.9)' }}>
+                      "{latestMood.note}"
+                    </div>
+                  )}
+                  <div style={{ fontSize: '0.9rem', color: 'rgba(255, 255, 255, 0.7)', marginTop: '0.5rem' }}>
+                    {new Date(latestMood.date).toLocaleDateString()} at {new Date(latestMood.date).toLocaleTimeString()}
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
-      <div style={{ 
-        marginTop: "3rem", 
-        display: 'flex', 
-        gap: '1.5rem', 
-        justifyContent: 'center',
-        flexWrap: 'wrap'
+      {/* Motivational Section */}
+      <div style={{
+        marginTop: '3rem',
+        textAlign: 'center',
+        background: 'linear-gradient(145deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.02))',
+        backdropFilter: 'blur(25px)',
+        border: '1px solid rgba(255, 255, 255, 0.2)',
+        borderRadius: '25px',
+        padding: '2rem',
+        boxShadow: '0 15px 40px rgba(0, 0, 0, 0.3)',
+        animation: 'fadeInUp 1s ease-out 1.2s both'
       }}>
-        <button className="elegant-button" onClick={() => navigate('/goals')}>
-          🎯 Go to Goals
-        </button>
-        <button className="elegant-button" onClick={() => navigate('/habits')}>
-          ✅ Go to Habits
-        </button>
-        <button className="elegant-button" onClick={() => navigate('/moods')}>
-          😊 Go to Moods
-        </button>
+        <h4 style={{
+          fontSize: '1.8rem',
+          fontWeight: '700',
+          background: 'linear-gradient(135deg, #ffffff, #f0f8ff, #e1f5fe)',
+          WebkitBackgroundClip: 'text',
+          WebkitTextFillColor: 'transparent',
+          marginBottom: '1rem',
+          animation: 'glow 3s ease-in-out infinite alternate'
+        }}>
+          🌟 Keep Building Your Best Self! 🌟
+        </h4>
+        <p style={{
+          fontSize: '1.1rem',
+          color: 'rgba(255, 255, 255, 0.9)',
+          lineHeight: '1.6',
+          maxWidth: '600px',
+          margin: '0 auto'
+        }}>
+          Every step counts, every habit matters, and every mood tracked brings you closer to understanding yourself better. 
+          Your journey to excellence is uniquely yours - embrace it! ✨
+        </p>
       </div>
     </div>
   );

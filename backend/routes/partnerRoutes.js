@@ -1,26 +1,28 @@
+// routes/partnerRoutes.js - FIXED VERSION
 const express = require('express');
 const router = express.Router();
+const auth = require('../middleware/auth'); // 🔥 ADD AUTH MIDDLEWARE
 const partnerController = require('../controllers/partnerController');
 
-// Send request
-router.post('/request', partnerController.sendPartnerRequest);
+// Send request (requires auth)
+router.post('/request', auth, partnerController.sendPartnerRequest);
 
-// Accept request (update status → accepted)
-router.put('/accept/:requestId', partnerController.acceptPartnerRequest);
+// Accept request (update status → accepted) (requires auth)
+router.put('/accept/:requestId', auth, partnerController.acceptPartnerRequest);
 
-// Reject request (update status → rejected)
-router.put('/reject/:requestId', partnerController.rejectPartnerRequest);
+// Reject request (update status → rejected) (requires auth)
+router.put('/reject/:requestId', auth, partnerController.rejectPartnerRequest);
 
-// Cancel sent request
-router.delete('/cancel/:requestId', partnerController.cancelPartnerRequest);
+// Cancel sent request (requires auth)
+router.delete('/cancel/:requestId', auth, partnerController.cancelPartnerRequest);
 
-// Remove partner
-router.delete('/remove/:userId', partnerController.removePartner);
+// Remove partner (requires auth)
+router.delete('/remove/:userId', auth, partnerController.removePartner);
 
-// Get incoming requests
-router.get('/requests/:userId', partnerController.getIncomingRequests);
+// Get incoming requests (requires auth - should use req.user.userId instead of params)
+router.get('/requests', auth, partnerController.getIncomingRequests);
 
-// Get partner info
-router.get('/partner/:userId', partnerController.getPartner);
+// Get partner info (requires auth - should use req.user.userId instead of params)
+router.get('/partner', auth, partnerController.getPartner);
 
 module.exports = router;

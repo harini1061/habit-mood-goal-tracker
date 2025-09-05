@@ -6,6 +6,7 @@ const {
   getHabits,
   updateHabit,
   deleteHabit,
+  markHabitCompleted
 } = require('../controllers/habitController');
 
 // Create a new habit
@@ -19,5 +20,8 @@ router.put('/:id', auth, updateHabit);
 
 // Delete a habit
 router.delete('/:id', auth, deleteHabit);
+
+// Mark habit as completed
+router.post('/:id/complete', auth, markHabitCompleted);
 
 module.exports = router;

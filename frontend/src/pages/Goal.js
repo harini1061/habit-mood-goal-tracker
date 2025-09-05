@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import '../unified-styles.css';
-// Remove this line: import Navbar from './Navbar';
 import {
   PieChart,
   Pie,
@@ -16,92 +15,118 @@ function Goal() {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [targetDate, setTargetDate] = useState('');
-
-  const userId = '6847dd137ab96450bdb4f01c'; // Replace with dynamic userId if needed
+  const [editingId, setEditingId] = useState(null);
+  const [showPreviousGoals, setShowPreviousGoals] = useState(false);
+  const user = JSON.parse(localStorage.getItem("user")); 
+  const currentUserId = user ? user._id : null;
 
   useEffect(() => {
     fetchGoals();
   }, []);
 
+  // Fetch goals with authentication
   const fetchGoals = async () => {
     try {
-      const response = await axios.get(`http://localhost:5000/api/goals/${userId}`);
-      setGoals(response.data);
-    } catch (error) {
-      console.error('Error fetching goals:', error);
+      const token = localStorage.getItem("token") || sessionStorage.getItem("token");
+      const res = await axios.get("http://localhost:5000/api/goals", {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setGoals(res.data);
+    } catch (err) {
+      console.error("Error fetching goals:", err);
     }
   };
 
+  // Submit (create or update)
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!title || !userId) return;
+    if (!title) return;
 
     try {
-      await axios.post('http://localhost:5000/api/goals', {
+      const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+
+      const goalData = {
         title,
         description,
-        targetDate,
-        userId
-      });
+        targetDate: targetDate || null
+      };
+
+      // Only include userId when creating a new goal, not when updating
+      if (!editingId) {
+        goalData.userId = currentUserId;
+      }
+
+      if (editingId) {
+        await axios.put(`http://localhost:5000/api/goals/${editingId}`, goalData, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        setEditingId(null);
+      } else {
+        await axios.post('http://localhost:5000/api/goals', goalData, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+      }
+
       setTitle('');
       setDescription('');
       setTargetDate('');
       fetchGoals();
-    } catch (error) {
-      console.error('Error adding goal:', error);
+    } catch (err) {
+      console.error('Error saving goal:', err);
     }
   };
 
-  const markGoalCompleted = async (id) => {
+  // Mark goal as completed/incomplete
+  const toggleGoalCompleted = async (id, currentStatus) => {
     try {
-      await axios.put(`http://localhost:5000/api/goals/${id}`, { completed: true });
+      const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+      await axios.put(`http://localhost:5000/api/goals/${id}`, { 
+        completed: !currentStatus 
+      }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
       fetchGoals();
     } catch (err) {
       console.error('Error updating goal:', err);
     }
   };
 
+  // Delete goal
   const deleteGoal = async (id) => {
     try {
-      await axios.delete(`http://localhost:5000/api/goals/${id}`);
+      const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+      await axios.delete(`http://localhost:5000/api/goals/${id}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
       fetchGoals();
     } catch (err) {
-      console.error('Error deleting goal:', err);
+      console.error("Error deleting goal:", err);
     }
   };
 
-  const data = [
-    { name: 'Completed', value: goals.filter(g => g.completed).length },
-    { name: 'Incomplete', value: goals.filter(g => !g.completed).length },
+  // Edit goal
+  const handleEdit = (goal) => {
+    setTitle(goal.title);
+    setDescription(goal.description || '');
+    setTargetDate(goal.targetDate ? goal.targetDate.split('T')[0] : '');
+    setEditingId(goal._id);
+    // Auto-expand the previous goals section when editing
+    setShowPreviousGoals(true);
+  };
+
+  // Chart data
+  const completedCount = goals.filter(g => g.completed).length;
+  const incompleteCount = goals.filter(g => !g.completed).length;
+  
+  const pieData = [
+    { name: 'Completed', value: completedCount },
+    { name: 'Incomplete', value: incompleteCount },
   ];
 
   const COLORS = ['#10B981', '#EF4444'];
 
-  const renderCustomLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, name, value }) => {
-    const RADIAN = Math.PI / 180;
-    const radius = innerRadius + (outerRadius - innerRadius) * 1.4;
-    const x = cx + radius * Math.cos(-midAngle * RADIAN);
-    const y = cy + radius * Math.sin(-midAngle * RADIAN);
-
-    return (
-      <text
-        x={x}
-        y={y}
-        fill="#ffffff"
-        textAnchor={x > cx ? 'start' : 'end'}
-        dominantBaseline="central"
-        fontSize="14"
-        fontWeight="600"
-        textShadow="0 2px 10px rgba(0,0,0,0.8)"
-      >
-        {`${name}: ${value}`}
-      </text>
-    );
-  };
-
   return (
-    // Remove <Navbar /> from here
-    <div style={{ 
+    <div style={{
       minHeight: '100vh',
       background: `
         radial-gradient(circle at 20% 80%, rgba(120, 119, 198, 0.3) 0%, transparent 50%),
@@ -118,30 +143,15 @@ function Goal() {
           from { opacity: 0; transform: translateY(20px); }
           to { opacity: 1; transform: translateY(0); }
         }
-        
+
         @keyframes fadeInUp {
           from { opacity: 0; transform: translateY(30px); }
           to { opacity: 1; transform: translateY(0); }
         }
-        
+
         @keyframes fadeInScale {
           from { opacity: 0; transform: scale(0.9) translateY(20px); }
           to { opacity: 1; transform: scale(1) translateY(0); }
-        }
-        
-        @keyframes shimmer {
-          0% { transform: translateX(-100%); }
-          100% { transform: translateX(100%); }
-        }
-        
-        @keyframes glow {
-          from { text-shadow: 0 4px 20px rgba(255, 255, 255, 0.4); }
-          to { text-shadow: 0 4px 30px rgba(255, 255, 255, 0.8), 0 0 40px rgba(120, 200, 255, 0.4); }
-        }
-        
-        @keyframes pulse {
-          0%, 100% { transform: scale(1); }
-          50% { transform: scale(1.02); }
         }
 
         @keyframes float {
@@ -149,15 +159,19 @@ function Goal() {
           50% { transform: translateY(-10px); }
         }
 
-        @keyframes gradientShift {
-          0% { background-position: 0% 50%; }
-          50% { background-position: 100% 50%; }
-          100% { background-position: 0% 50%; }
+        @keyframes slideDown {
+          from { opacity: 0; transform: translateY(-20px); max-height: 0; }
+          to { opacity: 1; transform: translateY(0); max-height: 2000px; }
         }
 
-        .elegant-input {
-          background: linear-gradient(145deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.04));
-          border: 2px solid rgba(255, 255, 255, 0.2);
+        @keyframes slideUp {
+          from { opacity: 1; transform: translateY(0); max-height: 2000px; }
+          to { opacity: 0; transform: translateY(-20px); max-height: 0; }
+        }
+
+        .elegant-input, .elegant-textarea {
+          background: linear-gradient(145deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.02));
+          border: 2px solid rgba(255, 255, 255, 0.15);
           border-radius: 15px;
           color: #ffffff;
           padding: 12px 18px;
@@ -165,72 +179,107 @@ function Goal() {
           font-weight: 500;
           backdrop-filter: blur(20px);
           -webkit-backdrop-filter: blur(20px);
-          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-          box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+          transition: all 0.3s ease;
           width: 100%;
         }
-
-        .elegant-input:focus {
+        .elegant-input:focus, .elegant-textarea:focus {
           outline: none;
           border-color: rgba(135, 206, 235, 0.6);
-          box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4), 0 0 20px rgba(135, 206, 235, 0.3);
-          background: linear-gradient(145deg, rgba(255, 255, 255, 0.15), rgba(255, 255, 255, 0.06));
+          box-shadow: 0 0 20px rgba(135, 206, 235, 0.3);
         }
-
-        .elegant-input::placeholder {
-          color: rgba(255, 255, 255, 0.6);
-          font-weight: 400;
-        }
-
         .elegant-button {
           background: linear-gradient(145deg, rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0.05));
           border: 2px solid rgba(255, 255, 255, 0.3);
           border-radius: 15px;
-          color: #ffffff;
+          color: #fff;
           padding: 12px 24px;
           font-size: 1.1rem;
           font-weight: 600;
           cursor: pointer;
-          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+          transition: all 0.3s ease;
           backdrop-filter: blur(20px);
-          -webkit-backdrop-filter: blur(20px);
-          text-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
-          box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+          margin-right: 0.5rem;
+          margin-bottom: 0.5rem;
+        }
+        .elegant-button:hover {
+          transform: translateY(-3px);
+          background: linear-gradient(145deg, rgba(255, 255, 255, 0.3), rgba(255, 255, 255, 0.1));
+        }
+        .goal-card {
+          background: linear-gradient(145deg, rgba(255, 255, 255, 0.15), rgba(255, 255, 255, 0.05));
+          border: 2px solid rgba(255, 255, 255, 0.25);
+          border-radius: 20px;
+          padding: 2rem;
+          backdrop-filter: blur(25px);
+          margin-bottom: 1.5rem;
+          box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+          animation: fadeInUp 1s ease-out both;
+          color: #fff;
           position: relative;
           overflow: hidden;
         }
-
-        .elegant-button:hover {
-          transform: translateY(-3px);
-          box-shadow: 0 15px 45px rgba(0, 0, 0, 0.4);
-          border-color: rgba(255, 255, 255, 0.6);
+        .goal-card.completed {
+          border-color: rgba(16, 185, 129, 0.5);
+          background: linear-gradient(145deg, rgba(16, 185, 129, 0.15), rgba(16, 185, 129, 0.05));
+        }
+        .goal-card.overdue {
+          border-color: rgba(239, 68, 68, 0.5);
+          background: linear-gradient(145deg, rgba(239, 68, 68, 0.15), rgba(239, 68, 68, 0.05));
+        }
+        .goal-actions {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 0.5rem;
+          margin-top: 1rem;
+        }
+        .status-badge {
+          display: inline-block;
+          padding: 0.5rem 1rem;
+          border-radius: 20px;
+          font-size: 0.9rem;
+          font-weight: 600;
+          margin-bottom: 1rem;
+        }
+        .status-completed {
+          background: linear-gradient(145deg, rgba(16, 185, 129, 0.3), rgba(16, 185, 129, 0.1));
+          color: #10B981;
+          border: 1px solid rgba(16, 185, 129, 0.4);
+        }
+        .status-pending {
+          background: linear-gradient(145deg, rgba(245, 158, 11, 0.3), rgba(245, 158, 11, 0.1));
+          color: #F59E0B;
+          border: 1px solid rgba(245, 158, 11, 0.4);
+        }
+        .status-overdue {
+          background: linear-gradient(145deg, rgba(239, 68, 68, 0.3), rgba(239, 68, 68, 0.1));
+          color: #EF4444;
+          border: 1px solid rgba(239, 68, 68, 0.4);
+        }
+        .dropdown-toggle {
+          background: linear-gradient(145deg, rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0.05));
+          border: 2px solid rgba(255, 255, 255, 0.3);
+          border-radius: 15px;
+          color: #fff;
+          padding: 15px 30px;
+          font-size: 1.2rem;
+          font-weight: 600;
+          cursor: pointer;
+          transition: all 0.3s ease;
+          backdrop-filter: blur(20px);
+          width: 100%;
+          margin-bottom: 1rem;
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+        }
+        .dropdown-toggle:hover {
+          transform: translateY(-2px);
           background: linear-gradient(145deg, rgba(255, 255, 255, 0.3), rgba(255, 255, 255, 0.1));
         }
-
-        .elegant-button:active {
-          transform: translateY(-1px);
+        .previous-goals-section {
+          animation: ${showPreviousGoals ? 'slideDown' : 'slideUp'} 0.3s ease-out forwards;
+          overflow: hidden;
         }
-
-        .complete-button {
-          background: linear-gradient(145deg, rgba(16, 185, 129, 0.3), rgba(16, 185, 129, 0.1));
-          border: 2px solid rgba(16, 185, 129, 0.4);
-        }
-
-        .complete-button:hover {
-          background: linear-gradient(145deg, rgba(16, 185, 129, 0.4), rgba(16, 185, 129, 0.2));
-          border-color: rgba(16, 185, 129, 0.6);
-        }
-
-        .delete-button {
-          background: linear-gradient(145deg, rgba(239, 68, 68, 0.3), rgba(239, 68, 68, 0.1));
-          border: 2px solid rgba(239, 68, 68, 0.4);
-        }
-
-        .delete-button:hover {
-          background: linear-gradient(145deg, rgba(239, 68, 68, 0.4), rgba(239, 68, 68, 0.2));
-          border-color: rgba(239, 68, 68, 0.6);
-        }
-
         .floating-orb {
           position: absolute;
           border-radius: 50%;
@@ -238,7 +287,6 @@ function Goal() {
           opacity: 0.6;
           animation: float 6s ease-in-out infinite;
         }
-
         .orb-1 {
           width: 60px;
           height: 60px;
@@ -247,7 +295,6 @@ function Goal() {
           left: 10%;
           animation-delay: -2s;
         }
-
         .orb-2 {
           width: 40px;
           height: 40px;
@@ -256,7 +303,6 @@ function Goal() {
           right: 15%;
           animation-delay: -4s;
         }
-
         .orb-3 {
           width: 80px;
           height: 80px;
@@ -267,7 +313,7 @@ function Goal() {
         }
       `}</style>
 
-      {/* Floating decorative orbs */}
+      {/* Floating Orbs */}
       <div className="floating-orb orb-1"></div>
       <div className="floating-orb orb-2"></div>
       <div className="floating-orb orb-3"></div>
@@ -275,381 +321,256 @@ function Goal() {
       <h1 style={{
         fontSize: '3rem',
         fontWeight: '900',
-        background: 'linear-gradient(135deg, #ffffff 0%, #f0f8ff 25%, #e1f5fe 50%, #b3e5fc 75%, #81d4fa 100%)',
-        backgroundSize: '400% 400%',
-        WebkitBackgroundClip: 'text',
-        WebkitTextFillColor: 'transparent',
-        backgroundClip: 'text',
         textAlign: 'center',
         marginBottom: '2rem',
-        textShadow: '0 4px 30px rgba(255, 255, 255, 0.3)',
-        animation: 'fadeIn 1s ease-out, gradientShift 4s ease-in-out infinite',
-        letterSpacing: '2px'
+        background: 'linear-gradient(135deg, #ffffff 0%, #e1f5fe 50%, #81d4fa 100%)',
+        WebkitBackgroundClip: 'text',
+        WebkitTextFillColor: 'transparent',
+        textShadow: '0 4px 30px rgba(255,255,255,0.3)',
+        animation: 'fadeIn 1s ease-out'
       }}>
         🎯 Goal Tracker
       </h1>
 
       {/* Goal Form */}
-      <div style={{
-        background: 'linear-gradient(145deg, rgba(255, 255, 255, 0.18), rgba(255, 255, 255, 0.06))',
-        backdropFilter: 'blur(30px)',
-        WebkitBackdropFilter: 'blur(30px)',
-        border: '2px solid rgba(255, 255, 255, 0.25)',
-        borderRadius: '25px',
-        padding: '2.5rem',
-        boxShadow: '0 25px 80px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.3)',
-        position: 'relative',
-        overflow: 'hidden',
-        animation: 'fadeInUp 1s ease-out 0.3s both',
-        marginBottom: '2rem'
+      <form onSubmit={handleSubmit} style={{ 
+        marginBottom: '2rem', 
+        display: 'grid', 
+        gap: '1rem',
+        background: 'linear-gradient(145deg, rgba(255, 255, 255, 0.15), rgba(255, 255, 255, 0.05))',
+        padding: '2rem',
+        borderRadius: '20px',
+        border: '2px solid rgba(255, 255, 255, 0.2)',
+        backdropFilter: 'blur(25px)',
+        animation: 'fadeInUp 1s ease-out 0.4s both'
       }}>
-        <div style={{
-          position: 'absolute',
-          top: '0',
-          left: '0',
-          right: '0',
-          height: '4px',
-          background: 'linear-gradient(90deg, #667eea, #764ba2, #f093fb)',
-          borderRadius: '25px 25px 0 0'
-        }}></div>
-
         <h3 style={{
-          fontSize: '1.5rem',
-          fontWeight: '700',
-          color: 'rgba(255, 255, 255, 0.95)',
+          color: '#fff',
           textAlign: 'center',
-          marginBottom: '1.5rem',
-          textShadow: '0 2px 15px rgba(0, 0, 0, 0.5)'
+          marginBottom: '1rem',
+          fontSize: '1.3rem',
+          fontWeight: '600'
         }}>
-          ✨ Create New Goal
+          {editingId ? '✏️ Edit Goal' : '🎯 Create New Goal'}
         </h3>
-
-        <form onSubmit={handleSubmit} style={{
-          display: 'grid',
-          gap: '1.5rem'
-        }}>
-          <input
-            type="text"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            placeholder="🎯 Goal Title"
-            required
-            className="elegant-input"
-          />
-          <input
-            type="text"
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            placeholder="📝 Description"
-            className="elegant-input"
-          />
-          <input
-            type="date"
-            value={targetDate}
-            onChange={(e) => setTargetDate(e.target.value)}
-            className="elegant-input"
-          />
-          <button type="submit" className="elegant-button">
-            ➕ Add Goal
+        <input
+          type="text"
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          placeholder="Goal title..."
+          className="elegant-input"
+          required
+        />
+        <textarea
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+          placeholder="Description (optional)"
+          className="elegant-textarea"
+          rows="3"
+        />
+        <input
+          type="date"
+          value={targetDate}
+          onChange={(e) => setTargetDate(e.target.value)}
+          className="elegant-input"
+          placeholder="Target Date (optional)"
+        />
+        <button type="submit" className="elegant-button">
+          {editingId ? '✏️ Update Goal' : '➕ Add Goal'}
+        </button>
+        {editingId && (
+          <button 
+            type="button" 
+            className="elegant-button" 
+            onClick={() => {
+              setEditingId(null);
+              setTitle('');
+              setDescription('');
+              setTargetDate('');
+            }}
+          >
+            ❌ Cancel Edit
           </button>
-        </form>
-      </div>
+        )}
+      </form>
 
-      {/* Goal List */}
-      {goals.length === 0 ? (
-        <div style={{
-          background: 'linear-gradient(145deg, rgba(255, 255, 255, 0.15), rgba(255, 255, 255, 0.05))',
-          backdropFilter: 'blur(25px)',
-          WebkitBackdropFilter: 'blur(25px)',
-          border: '2px solid rgba(255, 255, 255, 0.2)',
-          borderRadius: '20px',
-          padding: '3rem',
-          textAlign: 'center',
-          boxShadow: '0 20px 60px rgba(0, 0, 0, 0.4)',
-          animation: 'fadeInScale 1s ease-out 0.6s both',
-          marginBottom: '2rem'
-        }}>
-          <p style={{
-            fontSize: '1.3rem',
-            color: 'rgba(255, 255, 255, 0.8)',
-            fontWeight: '500',
-            textShadow: '0 2px 10px rgba(0, 0, 0, 0.5)'
-          }}>
-            🌟 No goals found. Add your first goal above!
-          </p>
-        </div>
-      ) : (
-        <div style={{
-          display: 'grid',
-          gap: '1.5rem',
-          marginBottom: '3rem'
-        }}>
-          {goals.map((goal, index) => {
-            const today = new Date();
-            const target = new Date(goal.targetDate);
-            const daysLeft = Math.ceil((target - today) / (1000 * 60 * 60 * 24));
-            const showReminder = !goal.completed && daysLeft >= 0 && daysLeft <= 3;
+      {/* Previous Goals Dropdown Section */}
+      {goals.length > 0 && (
+        <div style={{ marginBottom: '3rem' }}>
+          <button 
+            className="dropdown-toggle"
+            onClick={() => setShowPreviousGoals(!showPreviousGoals)}
+          >
+            <span>🎯 Previous Goals ({goals.length})</span>
+            <span style={{ 
+              transform: showPreviousGoals ? 'rotate(180deg)' : 'rotate(0deg)',
+              transition: 'transform 0.3s ease'
+            }}>
+              ⬇️
+            </span>
+          </button>
 
-            return (
-              <div
-                key={goal._id}
-                style={{
-                  background: goal.completed 
-                    ? 'linear-gradient(145deg, rgba(16, 185, 129, 0.15), rgba(16, 185, 129, 0.05))'
-                    : 'linear-gradient(145deg, rgba(255, 255, 255, 0.15), rgba(255, 255, 255, 0.05))',
-                  backdropFilter: 'blur(25px)',
-                  WebkitBackdropFilter: 'blur(25px)',
-                  border: goal.completed 
-                    ? '2px solid rgba(16, 185, 129, 0.3)'
-                    : '2px solid rgba(255, 255, 255, 0.25)',
-                  borderRadius: '20px',
-                  padding: '2rem',
-                  boxShadow: goal.completed 
-                    ? '0 20px 60px rgba(16, 185, 129, 0.2)'
-                    : '0 20px 60px rgba(0, 0, 0, 0.4)',
-                  position: 'relative',
-                  overflow: 'hidden',
-                  animation: `fadeInUp 1s ease-out ${0.6 + index * 0.1}s both`,
-                  transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.transform = 'translateY(-5px)';
-                  e.currentTarget.style.boxShadow = goal.completed 
-                    ? '0 30px 80px rgba(16, 185, 129, 0.3)'
-                    : '0 30px 80px rgba(0, 0, 0, 0.5)';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.transform = 'translateY(0)';
-                  e.currentTarget.style.boxShadow = goal.completed 
-                    ? '0 20px 60px rgba(16, 185, 129, 0.2)'
-                    : '0 20px 60px rgba(0, 0, 0, 0.4)';
-                }}
-              >
-                {showReminder && (
-                  <div style={{
-                    position: 'absolute',
-                    top: '1rem',
-                    right: '1rem',
-                    background: 'linear-gradient(145deg, rgba(255, 215, 0, 0.3), rgba(255, 215, 0, 0.1))',
-                    border: '2px solid rgba(255, 215, 0, 0.4)',
-                    borderRadius: '15px',
-                    padding: '8px 16px',
-                    fontSize: '0.9rem',
-                    fontWeight: '600',
-                    color: '#ffd700',
-                    textShadow: '0 2px 10px rgba(0, 0, 0, 0.5)',
-                    animation: 'pulse 2s infinite'
-                  }}>
-                    ⏰ {daysLeft === 0 ? 'Due Today!' : `Due in ${daysLeft} day${daysLeft > 1 ? 's' : ''}`}
+          {showPreviousGoals && (
+            <div className="previous-goals-section">
+              {goals.map((goal) => {
+                const isOverdue = goal.targetDate && new Date(goal.targetDate) < new Date() && !goal.completed;
+                const cardClass = goal.completed ? 'completed' : isOverdue ? 'overdue' : '';
+                
+                return (
+                  <div key={goal._id} className={`goal-card ${cardClass}`}>
+                    <div>
+                      <div className={`status-badge ${goal.completed ? 'status-completed' : isOverdue ? 'status-overdue' : 'status-pending'}`}>
+                        {goal.completed ? '✅ Completed' : isOverdue ? '⚠️ Overdue' : '🔄 In Progress'}
+                      </div>
+                      
+                      <h3 style={{ 
+                        fontSize: '1.4rem', 
+                        marginBottom: '0.5rem',
+                        textDecoration: goal.completed ? 'line-through' : 'none',
+                        opacity: goal.completed ? 0.7 : 1
+                      }}>
+                        <b>{goal.title}</b>
+                      </h3>
+                      
+                      {goal.description && (
+                        <p style={{ marginBottom: '0.5rem', opacity: 0.9 }}>
+                          <b>Description:</b> {goal.description}
+                        </p>
+                      )}
+                      
+                      {goal.targetDate && (
+                        <p style={{ marginBottom: '0.5rem' }}>
+                          <b>Target Date:</b> {new Date(goal.targetDate).toLocaleDateString()}
+                        </p>
+                      )}
+                      
+                      <p style={{ fontSize: '0.9rem', opacity: 0.8 }}>
+                        <b>Created:</b> {new Date(goal.createdAt).toLocaleDateString()}
+                      </p>
+                    </div>
+                    
+                    <div className="goal-actions">
+                      <button 
+                        className="elegant-button" 
+                        onClick={() => toggleGoalCompleted(goal._id, goal.completed)}
+                        style={{
+                          background: goal.completed 
+                            ? 'linear-gradient(145deg, rgba(245, 158, 11, 0.2), rgba(245, 158, 11, 0.05))'
+                            : 'linear-gradient(145deg, rgba(16, 185, 129, 0.2), rgba(16, 185, 129, 0.05))',
+                          borderColor: goal.completed ? 'rgba(245, 158, 11, 0.4)' : 'rgba(16, 185, 129, 0.4)'
+                        }}
+                      >
+                        {goal.completed ? '🔄 Mark Incomplete' : '✅ Mark Complete'}
+                      </button>
+                      <button className="elegant-button" onClick={() => handleEdit(goal)}>
+                        ✏️ Edit
+                      </button>
+                      <button className="elegant-button" onClick={() => deleteGoal(goal._id)}>
+                        🗑️ Delete
+                      </button>
+                    </div>
                   </div>
-                )}
-
-                <h2 style={{
-                  fontSize: '1.5rem',
-                  fontWeight: '700',
-                  color: 'rgba(255, 255, 255, 0.95)',
-                  marginBottom: '1rem',
-                  textShadow: '0 2px 15px rgba(0, 0, 0, 0.5)'
-                }}>
-                  {goal.title}
-                </h2>
-
-                <p style={{
-                  fontSize: '1rem',
-                  color: 'rgba(255, 255, 255, 0.8)',
-                  marginBottom: '0.5rem',
-                  textShadow: '0 2px 10px rgba(0, 0, 0, 0.5)'
-                }}>
-                  <strong>Description:</strong> {goal.description || '—'}
-                </p>
-
-                <p style={{
-                  fontSize: '1rem',
-                  color: 'rgba(255, 255, 255, 0.8)',
-                  marginBottom: '0.5rem',
-                  textShadow: '0 2px 10px rgba(0, 0, 0, 0.5)'
-                }}>
-                  <strong>Target Date:</strong> {goal.targetDate ? new Date(goal.targetDate).toLocaleDateString() : 'N/A'}
-                </p>
-
-                <p style={{
-                  fontSize: '1rem',
-                  color: 'rgba(255, 255, 255, 0.8)',
-                  marginBottom: '1.5rem',
-                  textShadow: '0 2px 10px rgba(0, 0, 0, 0.5)'
-                }}>
-                  <strong>Status:</strong>{' '}
-                  {goal.completed ? (
-                    <span style={{
-                      color: '#10B981',
-                      fontWeight: '700',
-                      textShadow: '0 0 15px rgba(16, 185, 129, 0.6)'
-                    }}>
-                      ✅ Completed
-                    </span>
-                  ) : (
-                    <span style={{
-                      color: '#fbbf24',
-                      fontWeight: '700',
-                      textShadow: '0 0 15px rgba(251, 191, 36, 0.6)'
-                    }}>
-                      ⏳ Pending
-                    </span>
-                  )}
-                </p>
-
-                <div style={{
-                  display: 'flex',
-                  gap: '1rem',
-                  flexWrap: 'wrap'
-                }}>
-                  {!goal.completed && (
-                    <button 
-                      onClick={() => markGoalCompleted(goal._id)} 
-                      className="elegant-button complete-button"
-                    >
-                      ✅ Mark Completed
-                    </button>
-                  )}
-                  <button 
-                    onClick={() => deleteGoal(goal._id)} 
-                    className="elegant-button delete-button"
-                  >
-                    🗑️ Delete
-                  </button>
-                </div>
-              </div>
-            );
-          })}
+                );
+              })}
+            </div>
+          )}
         </div>
       )}
 
-      {/* Goal Completion Progress Chart */}
-      <div style={{
-        background: 'linear-gradient(145deg, rgba(255, 255, 255, 0.18), rgba(255, 255, 255, 0.06))',
-        backdropFilter: 'blur(30px)',
-        WebkitBackdropFilter: 'blur(30px)',
-        border: '2px solid rgba(255, 255, 255, 0.25)',
-        borderRadius: '25px',
-        padding: '2.5rem',
-        boxShadow: '0 25px 80px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.3)',
-        position: 'relative',
-        overflow: 'hidden',
-        animation: 'fadeInScale 1s ease-out 0.9s both'
-      }}>
-        <div style={{
-          position: 'absolute',
-          top: '0',
-          left: '0',
-          right: '0',
-          height: '4px',
-          background: 'linear-gradient(90deg, #667eea, #764ba2, #f093fb)',
-          borderRadius: '25px 25px 0 0'
-        }}></div>
+      {goals.length === 0 && (
+        <p style={{ color: '#fff', textAlign: 'center', fontSize: '1.2rem' }}>
+          🌟 No goals found. Add your first goal above!
+        </p>
+      )}
 
-        <h2 style={{
-          fontSize: '2rem',
-          fontWeight: '800',
-          background: 'linear-gradient(135deg, #ffffff, #f0f8ff, #e1f5fe, #b3e5fc)',
-          WebkitBackgroundClip: 'text',
-          WebkitTextFillColor: 'transparent',
-          backgroundClip: 'text',
-          textAlign: 'center',
-          marginBottom: '2rem',
-          textShadow: '0 4px 25px rgba(255, 255, 255, 0.4)',
-          animation: 'glow 2s ease-in-out infinite alternate'
-        }}>
-          📊 Goal Completion Progress
-        </h2>
-
-        {goals.length === 0 ? (
-          <p style={{
-            fontSize: '1.2rem',
-            color: 'rgba(255, 255, 255, 0.8)',
-            textAlign: 'center',
-            fontWeight: '500',
-            textShadow: '0 2px 10px rgba(0, 0, 0, 0.5)'
+      {/* Charts */}
+      {goals.length > 0 && (
+        <div style={{ marginTop: '3rem' }}>
+          {/* Progress Summary */}
+          <div style={{
+            background: 'rgba(255,255,255,0.1)',
+            borderRadius: '20px',
+            padding: '2rem',
+            marginBottom: '2rem',
+            animation: 'fadeInUp 1s ease-out 0.6s both'
           }}>
-            📈 No data to show progress yet.
-          </p>
-        ) : (
-          <div>
+            <h2 style={{ color: '#fff', textAlign: 'center', marginBottom: '1rem' }}>
+              📊 Goal Progress Summary
+            </h2>
             <div style={{
-              background: 'linear-gradient(145deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.03))',
-              borderRadius: '20px',
-              padding: '2rem',
-              marginBottom: '2rem'
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+              gap: '1rem',
+              textAlign: 'center'
             }}>
-              <ResponsiveContainer width="100%" height={350}>
-                <PieChart>
-                  <Pie
-                    dataKey="value"
-                    data={data}
-                    cx="50%"
-                    cy="50%"
-                    outerRadius={120}
-                    innerRadius={60}
-                    paddingAngle={5}
-                    label={renderCustomLabel}
-                    labelLine={{ stroke: '#ffffff', strokeWidth: 2 }}
-                    animationBegin={0}
-                    animationDuration={1500}
-                    animationEasing="ease-in-out"
-                  >
-                    {data.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                    ))}
-                  </Pie>
-                  <Tooltip 
-                    contentStyle={{
-                      background: 'rgba(0, 0, 0, 0.8)',
-                      border: '1px solid rgba(255, 255, 255, 0.2)',
-                      borderRadius: '10px',
-                      color: 'white'
-                    }}
-                  />
-                  <Legend 
-                    wrapperStyle={{
-                      color: 'white',
-                      fontSize: '14px',
-                      fontWeight: '600'
-                    }}
-                  />
-                </PieChart>
-              </ResponsiveContainer>
-            </div>
-
-            <div style={{
-              textAlign: 'center',
-              background: 'linear-gradient(145deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.03))',
-              borderRadius: '15px',
-              padding: '1.5rem'
-            }}>
-              <p style={{
-                fontSize: '1.3rem',
-                fontWeight: '600',
-                color: 'rgba(255, 255, 255, 0.95)',
-                textShadow: '0 2px 15px rgba(0, 0, 0, 0.5)'
+              <div style={{
+                background: 'linear-gradient(145deg, rgba(16, 185, 129, 0.2), rgba(16, 185, 129, 0.1))',
+                padding: '1.5rem',
+                borderRadius: '15px',
+                border: '1px solid rgba(16, 185, 129, 0.3)'
               }}>
-                <span style={{
-                  color: '#10B981',
-                  fontWeight: '800',
-                  textShadow: '0 0 15px rgba(16, 185, 129, 0.6)'
-                }}>
-                  {data[0].value}
-                </span> Completed /{' '}
-                <span style={{
-                  color: '#EF4444',
-                  fontWeight: '800',
-                  textShadow: '0 0 15px rgba(239, 68, 68, 0.6)'
-                }}>
-                  {data[1].value}
-                </span> Incomplete
-              </p>
+                <div style={{ fontSize: '2rem', fontWeight: '900', color: '#10B981' }}>
+                  {completedCount}
+                </div>
+                <div style={{ color: '#fff', fontSize: '1.1rem' }}>Completed Goals</div>
+              </div>
+              <div style={{
+                background: 'linear-gradient(145deg, rgba(239, 68, 68, 0.2), rgba(239, 68, 68, 0.1))',
+                padding: '1.5rem',
+                borderRadius: '15px',
+                border: '1px solid rgba(239, 68, 68, 0.3)'
+              }}>
+                <div style={{ fontSize: '2rem', fontWeight: '900', color: '#EF4444' }}>
+                  {incompleteCount}
+                </div>
+                <div style={{ color: '#fff', fontSize: '1.1rem' }}>Pending Goals</div>
+              </div>
+              <div style={{
+                background: 'linear-gradient(145deg, rgba(79, 172, 254, 0.2), rgba(79, 172, 254, 0.1))',
+                padding: '1.5rem',
+                borderRadius: '15px',
+                border: '1px solid rgba(79, 172, 254, 0.3)'
+              }}>
+                <div style={{ fontSize: '2rem', fontWeight: '900', color: '#4FACFE' }}>
+                  {goals.length > 0 ? Math.round((completedCount / goals.length) * 100) : 0}%
+                </div>
+                <div style={{ color: '#fff', fontSize: '1.1rem' }}>Completion Rate</div>
+              </div>
             </div>
           </div>
-        )}
-      </div>
+
+          {/* Pie Chart */}
+          <div style={{
+            background: 'rgba(255,255,255,0.1)',
+            borderRadius: '20px',
+            padding: '2rem',
+            animation: 'fadeInUp 1s ease-out 0.8s both'
+          }}>
+            <h3 style={{ color: '#fff', textAlign: 'center', marginBottom: '1rem' }}>
+              📈 Goal Distribution
+            </h3>
+            <ResponsiveContainer width="100%" height={300}>
+              <PieChart>
+                <Pie
+                  data={pieData}
+                  cx="50%"
+                  cy="50%"
+                  outerRadius={80}
+                  fill="#8884d8"
+                  dataKey="value"
+                  label={({name, value, percent}) => `${name}: ${value} (${(percent * 100).toFixed(0)}%)`}
+                >
+                  {pieData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                  ))}
+                </Pie>
+                <Tooltip />
+                <Legend />
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
