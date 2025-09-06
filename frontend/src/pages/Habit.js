@@ -106,7 +106,22 @@ function Habit() {
       }
     }
   };
-
+  // Add this function after markHabitCompleted
+const undoHabitCompletion = async (id) => {
+  try {
+    const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+    await axios.delete(`${process.env.REACT_APP_API_URL}/api/habits/${id}/complete`, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    fetchHabits();
+  } catch (error) {
+    if (error.response?.status === 400) {
+      alert('Habit was not completed today!');
+    } else {
+      console.error("Error undoing habit completion:", error);
+    }
+  }
+};
   // Check if habit was completed today
   const isCompletedToday = (habit) => {
     const today = new Date();
@@ -389,6 +404,16 @@ function Habit() {
           background: linear-gradient(145deg, rgba(16, 185, 129, 0.4), rgba(16, 185, 129, 0.2));
           border-color: rgba(16, 185, 129, 0.6);
         }
+
+        .undo-button {
+  background: linear-gradient(145deg, rgba(251, 146, 60, 0.3), rgba(251, 146, 60, 0.1));
+  border: 2px solid rgba(251, 146, 60, 0.4);
+}
+
+.undo-button:hover {
+  background: linear-gradient(145deg, rgba(251, 146, 60, 0.4), rgba(251, 146, 60, 0.2));
+  border-color: rgba(251, 146, 60, 0.6);
+}
 
         .completed-today {
           background: linear-gradient(145deg, rgba(16, 185, 129, 0.15), rgba(16, 185, 129, 0.05));
@@ -853,32 +878,39 @@ function Habit() {
                   </div>
 
                   <div style={{
-                    display: 'flex',
-                    gap: '1rem',
-                    flexWrap: 'wrap',
-                    marginTop: '1.5rem'
-                  }}>
-                    {!completedToday && (
-                      <button 
-                        onClick={() => markHabitCompleted(habit._id)} 
-                        className="elegant-button complete-button"
-                      >
-                        ✅ Mark Complete
-                      </button>
-                    )}
-                    <button 
-                      onClick={() => handleEdit(habit)} 
-                      className="elegant-button edit-button"
-                    >
-                      ✏️ Edit
-                    </button>
-                    <button 
-                      onClick={() => handleDelete(habit._id)} 
-                      className="elegant-button delete-button"
-                    >
-                      🗑️ Delete
-                    </button>
-                  </div>
+  display: 'flex',
+  gap: '1rem',
+  flexWrap: 'wrap',
+  marginTop: '1.5rem'
+}}>
+  {completedToday ? (
+    <button 
+      onClick={() => undoHabitCompletion(habit._id)} 
+      className="elegant-button undo-button"
+    >
+      ↩️ Undo Complete
+    </button>
+  ) : (
+    <button 
+      onClick={() => markHabitCompleted(habit._id)} 
+      className="elegant-button complete-button"
+    >
+      ✅ Mark Complete
+    </button>
+  )}
+  <button 
+    onClick={() => handleEdit(habit)} 
+    className="elegant-button edit-button"
+  >
+    ✏️ Edit
+  </button>
+  <button 
+    onClick={() => handleDelete(habit._id)} 
+    className="elegant-button delete-button"
+  >
+    🗑️ Delete
+  </button>
+</div>
                 </div>
               );
             })}
